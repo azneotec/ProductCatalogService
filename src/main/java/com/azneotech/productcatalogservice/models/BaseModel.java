@@ -7,7 +7,7 @@ import lombok.Setter;
 import java.util.Date;
 
 /**
- * Identity and audit fields shared by every model in the catalog.
+ * Identity and audit fields shared by every model in the product-catalog.
  */
 @Getter
 @Setter
@@ -17,4 +17,6 @@ public abstract class BaseModel {
     private Long id;
     private Date createdAt;
     private Date lastUpdatedAt;
+    private State state;
+
 }

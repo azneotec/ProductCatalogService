@@ -11,46 +11,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-/**
- * A single sellable product, carrying everything a product detail page renders:
- * descriptions, a gallery of images and a grouped specification table.
- *
- * <p>Lombok's {@code @Data}/{@code @ToString}/{@code @EqualsAndHashCode} are deliberately
- * not used here: {@link #category} points back at a {@link Category} that holds this
- * product, so generated implementations would recurse.
- */
 @Getter
 @Setter
 @NoArgsConstructor
 public class Product extends BaseModel {
 
     private String title;
-
-    /** Long form copy shown on the detail page. */
     private String description;
+    private String imageUrl;
+    private Double price;
+    private Category category;
+    private Boolean isSaleEligible;
 
-    /** Short blurb shown in category listings. */
+    /*
     private String shortDescription;
-
     private String brand;
     private String sku;
-
     private BigDecimal price;
-
-    /** Effective price when the product is on offer; null when it is not. */
     private BigDecimal discountedPrice;
-
     private String currency;
-
-    /** Category this product is filed under, used for breadcrumbs on the detail page. */
-    private Category category;
-
     private List<ProductImage> images = new ArrayList<>();
     private List<Specification> specifications = new ArrayList<>();
-
     private Integer stockQuantity;
     private ProductStatus status;
-
     private Double averageRating;
     private Integer ratingCount;
 
@@ -74,10 +57,6 @@ public class Product extends BaseModel {
         specifications.add(specification);
     }
 
-    /**
-     * The image to lead with: the one flagged primary, else the first available,
-     * else null when the product has no images at all.
-     */
     public ProductImage getPrimaryImage() {
         if (images == null || images.isEmpty()) {
             return null;
@@ -88,11 +67,6 @@ public class Product extends BaseModel {
                 .orElse(images.get(0));
     }
 
-    /**
-     * Specifications bucketed into their sections. Uses a {@link LinkedHashMap} so
-     * sections render in the order they were added rather than an arbitrary one.
-     * Specifications without a group are collected under {@code "General"}.
-     */
     public Map<String, List<Specification>> getSpecificationsByGroup() {
         Map<String, List<Specification>> grouped = new LinkedHashMap<>();
         if (specifications == null) {
@@ -108,15 +82,14 @@ public class Product extends BaseModel {
         return grouped;
     }
 
-    /** Whether the product can currently be bought. */
     public boolean isAvailable() {
         return status == ProductStatus.ACTIVE && stockQuantity != null && stockQuantity > 0;
     }
 
-    /** The price a customer actually pays. */
     public BigDecimal getEffectivePrice() {
         return discountedPrice != null ? discountedPrice : price;
     }
+    */
 
     @Override
     public boolean equals(Object other) {
@@ -136,6 +109,8 @@ public class Product extends BaseModel {
 
     @Override
     public String toString() {
-        return "Product{id=" + getId() + ", title='" + title + "', sku='" + sku + "'}";
+//        return "Product{id=" + getId() + ", title='" + title + "', sku='" + sku + "'}";
+        return "Product{id=" + getId() + ", title='" + title + "'}";
     }
+
 }

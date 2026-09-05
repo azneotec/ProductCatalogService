@@ -9,14 +9,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * A node in the browsing tree, for example {@code Electronics > Phones > Android}.
- * A category holds its own products plus any sub categories beneath it.
- *
- * <p>Lombok's {@code @Data}/{@code @ToString}/{@code @EqualsAndHashCode} are deliberately
- * not used here: {@link #parent} and {@link #subCategories} form a cycle, so generated
- * implementations would recurse forever.
- */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -24,22 +16,15 @@ public class Category extends BaseModel {
 
     private String name;
     private String description;
+    private List<Product> products;
 
-    /** URL safe segment used to build browse links, for example {@code "phones"}. */
+    /*
     private String slug;
-
-    /** Artwork for the category tile shown while browsing. */
     private String imageUrl;
-
     private int displayOrder;
-
-    /** Null for a root category. */
     private Category parent;
-
     private List<Category> subCategories = new ArrayList<>();
-    private List<Product> products = new ArrayList<>();
 
-    /** Adds a child category and keeps its parent link in step. */
     public void addSubCategory(Category subCategory) {
         if (subCategory == null) {
             return;
@@ -51,7 +36,6 @@ public class Category extends BaseModel {
         subCategory.setParent(this);
     }
 
-    /** Adds a product and keeps its category back reference in step. */
     public void addProduct(Product product) {
         if (product == null) {
             return;
@@ -71,10 +55,6 @@ public class Category extends BaseModel {
         return subCategories == null || subCategories.isEmpty();
     }
 
-    /**
-     * Every product in this category and in all categories beneath it, so browsing
-     * a parent category shows everything under it rather than only its direct products.
-     */
     public List<Product> getAllProducts() {
         List<Product> all = new ArrayList<>();
         collectProducts(all);
@@ -92,10 +72,6 @@ public class Category extends BaseModel {
         }
     }
 
-    /**
-     * The trail from the root category down to this one, for breadcrumbs.
-     * The last element is always this category.
-     */
     public List<Category> getPath() {
         List<Category> path = new ArrayList<>();
         for (Category current = this; current != null; current = current.getParent()) {
@@ -104,6 +80,8 @@ public class Category extends BaseModel {
         Collections.reverse(path);
         return path;
     }
+
+    */
 
     @Override
     public boolean equals(Object other) {
@@ -123,6 +101,7 @@ public class Category extends BaseModel {
 
     @Override
     public String toString() {
-        return "Category{id=" + getId() + ", name='" + name + "', slug='" + slug + "'}";
+//        return "Category{id=" + getId() + ", name='" + name + "', slug='" + slug + "'}";
+        return "Category{id=" + getId() + ", name='" + name + "'}";
     }
 }
