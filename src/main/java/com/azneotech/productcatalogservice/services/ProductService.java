@@ -70,6 +70,12 @@ public class ProductService implements IProductService {
         return null;
     }
 
+    @Override
+    public Product createProduct(Product product) {
+        // TODO: use postForEntity to create a product in FAKE_STORE_API
+        return null;
+    }
+
     public <T> ResponseEntity<T> putForEntity(String url, @Nullable Object request,
                                                Class<T> responseType, Object... uriVariables) throws RestClientException {
         RestTemplate restTemplate = getRestTemplate();
