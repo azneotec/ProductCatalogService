@@ -5,7 +5,6 @@ import com.azneotech.productcatalogservice.dtos.ProductDto;
 import com.azneotech.productcatalogservice.models.Category;
 import com.azneotech.productcatalogservice.models.Product;
 import com.azneotech.productcatalogservice.services.IProductService;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,12 +12,9 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 public class ProductController {
 
-
     private final IProductService productService;
 
-    public  ProductController(
-            IProductService productService
-    ) {
+    public  ProductController(IProductService productService) {
         this.productService = productService;
     }
 

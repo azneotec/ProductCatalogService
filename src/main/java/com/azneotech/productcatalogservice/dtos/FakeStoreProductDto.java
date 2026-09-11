@@ -10,6 +10,6 @@ public class FakeStoreProductDto {
     private String title;
     private String description;
     private String category;
-    private Double price;
+    private Float price;
     private String image;
 }

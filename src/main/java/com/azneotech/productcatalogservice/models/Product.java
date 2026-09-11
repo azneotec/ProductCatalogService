@@ -7,11 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 @Getter
@@ -23,7 +18,7 @@ public class Product extends BaseModel {
     private String title;
     private String description;
     private String imageUrl;
-    private Double price;
+    private Float price;
 
     @ManyToOne(cascade = CascadeType.ALL)
     private Category category;
