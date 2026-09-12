@@ -1,10 +1,15 @@
 package com.azneotech.productcatalogservice.models;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.OneToMany;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,9 +23,13 @@ import java.util.Objects;
 public class Category extends BaseModel {
 
     private String name;
+
+    @Column(columnDefinition = "TEXT")
     private String description;
 
-    @OneToMany(mappedBy = "category")
+    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
+//    @Fetch(FetchMode.SELECT)
+//    @BatchSize(size = 10)
     private List<Product> products;
 
     /*

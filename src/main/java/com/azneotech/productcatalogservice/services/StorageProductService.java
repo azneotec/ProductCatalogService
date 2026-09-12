@@ -7,16 +7,22 @@ import com.azneotech.productcatalogservice.repos.ProductRepository;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
-//@Primary
+@Primary
 public class StorageProductService implements IProductService {
 
     private final ProductRepository productRepository;
 
     public StorageProductService(ProductRepository productRepository) {
         this.productRepository = productRepository;
+    }
+
+    @Override
+    public List<Product> getAllProducts() {
+        return productRepository.findAll();
     }
 
     @Override
@@ -41,11 +47,10 @@ public class StorageProductService implements IProductService {
 
     @Override
     public Product createProduct(Product product) {
-        Optional<Product> productOptional = productRepository.findById(product.getId());
-        if (productOptional.isPresent()) {
-            throw new FakeStoreApiProductException("Product with id " + product.getId() + " already exists", FakeStoreApiExceptionType.PRODUCT_ALREADY_EXISTS);
-        }
-
+        // Id is DB-generated on create, so it's always null here and there's nothing
+        // to check for a pre-existing row; setting it manually would make save()
+        // treat this as an update and overwrite whatever row already has that id.
+        product.setId(null);
         return productRepository.save(product);
     }
 }

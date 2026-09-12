@@ -4,18 +4,33 @@ import com.azneotech.productcatalogservice.dtos.CategoryDto;
 import com.azneotech.productcatalogservice.dtos.ProductDto;
 import com.azneotech.productcatalogservice.models.Category;
 import com.azneotech.productcatalogservice.models.Product;
+import com.azneotech.productcatalogservice.services.CategoryService;
+import com.azneotech.productcatalogservice.services.ICategoryService;
 import com.azneotech.productcatalogservice.services.IProductService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 public class ProductController {
 
     private final IProductService productService;
+    private final ICategoryService categoryService;
 
-    public  ProductController(IProductService productService) {
+    public  ProductController(IProductService productService, ICategoryService categoryService) {
         this.productService = productService;
+        this.categoryService = categoryService;
+    }
+
+    @GetMapping("/products")
+    public ResponseEntity<List<ProductDto>> getAllProducts() {
+        List<Product> products = productService.getAllProducts();
+        List<ProductDto> responseDtos = products.stream()
+                .map(this::mapToProductDto)
+                .toList();
+        return new ResponseEntity<>(responseDtos, HttpStatus.OK);
     }
 
     @GetMapping("/products/{id}")
@@ -50,7 +65,6 @@ public class ProductController {
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
 
-    // TODO: GET all products
     // TODO: DELETE product by id
     // TODO: UPDATE product by id
 
@@ -73,15 +87,15 @@ public class ProductController {
 
     private Product mapToProduct(ProductDto productDto) {
         Product product = new Product();
-        product.setId(productDto.getId());
         product.setTitle(productDto.getName());
         product.setDescription(productDto.getDescription());
         product.setPrice(productDto.getPrice());
-        if (productDto.getCategory() != null) {
-            Category category = new Category();
-            category.setId(productDto.getCategory().getId());
-            category.setName(productDto.getCategory().getName());
-            category.setDescription(productDto.getCategory().getDescription());
+        CategoryDto categoryDto = productDto.getCategory();
+        if (categoryDto != null && categoryDto.getId() != null) {
+            Category category = categoryService.getCategoryById(categoryDto.getId());
+            if (category == null) {
+                throw new IllegalArgumentException("Category with id " + categoryDto.getId() + " doesn't exist");
+            }
             product.setCategory(category);
         }
         return product;

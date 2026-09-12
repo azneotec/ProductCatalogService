@@ -1,12 +1,13 @@
 package com.azneotech.productcatalogservice.models;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * The top level container users enter when they start browsing. Holds the root

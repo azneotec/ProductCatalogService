@@ -1,6 +1,6 @@
 package com.azneotech.productcatalogservice.models;
 
-import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
 import lombok.Getter;
@@ -16,11 +16,15 @@ import java.util.Objects;
 public class Product extends BaseModel {
 
     private String title;
+
+    @Column(columnDefinition = "TEXT")
     private String description;
     private String imageUrl;
     private Float price;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    // No cascade: categories are created/managed independently via CategoryService,
+    // so saving/deleting a product must never persist, merge, or remove its category.
+    @ManyToOne
     private Category category;
 
     private Boolean isSaleEligible;

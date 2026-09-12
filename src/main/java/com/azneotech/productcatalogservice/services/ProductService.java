@@ -16,6 +16,9 @@ import org.springframework.web.client.ResponseExtractor;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Arrays;
+import java.util.List;
+
 @Service
 public class ProductService implements IProductService {
 
@@ -35,6 +38,21 @@ public class ProductService implements IProductService {
                     .build();
         }
         return restTemplate;
+    }
+
+    @Override
+    public List<Product> getAllProducts() {
+        RestTemplate restTemplate = getRestTemplate();
+        ResponseEntity<FakeStoreProductDto[]> responseEntity = restTemplate.getForEntity(
+                "/products",
+                FakeStoreProductDto[].class
+        );
+        if (responseEntity.hasBody() && responseEntity.getStatusCode().is2xxSuccessful()) {
+            return Arrays.stream(responseEntity.getBody())
+                    .map(this::mapToProduct)
+                    .toList();
+        }
+        return List.of();
     }
 
     @Override
