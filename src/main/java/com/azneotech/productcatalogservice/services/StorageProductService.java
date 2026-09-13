@@ -1,7 +1,7 @@
 package com.azneotech.productcatalogservice.services;
 
-import com.azneotech.productcatalogservice.exceptions.FakeStoreApiExceptionType;
-import com.azneotech.productcatalogservice.exceptions.FakeStoreApiProductException;
+import com.azneotech.productcatalogservice.exceptions.ProductExceptionType;
+import com.azneotech.productcatalogservice.exceptions.ProductException;
 import com.azneotech.productcatalogservice.models.Product;
 import com.azneotech.productcatalogservice.repos.ProductRepository;
 import org.springframework.context.annotation.Primary;
@@ -29,7 +29,7 @@ public class StorageProductService implements IProductService {
     public Product getProductDetailsById(Long id) {
         Optional<Product> productOptional = productRepository.findById(id);
         if (productOptional.isEmpty()) {
-            throw new FakeStoreApiProductException("Product with id " + id + " doesn't exists", FakeStoreApiExceptionType.PRODUCT_NOT_FOUND);
+            throw new ProductException("Product with id " + id + " doesn't exists", ProductExceptionType.PRODUCT_NOT_FOUND);
         }
         return productOptional.get();
     }
@@ -38,7 +38,7 @@ public class StorageProductService implements IProductService {
     public Product replaceProduct(Long id, Product product) {
         Optional<Product> productOptional = productRepository.findById(id);
         if (productOptional.isEmpty()) {
-            throw new FakeStoreApiProductException("Product with id " + id + " doesn't exists", FakeStoreApiExceptionType.PRODUCT_NOT_FOUND);
+            throw new ProductException("Product with id " + id + " doesn't exists", ProductExceptionType.PRODUCT_NOT_FOUND);
         }
 
         product.setId(id);
@@ -52,5 +52,13 @@ public class StorageProductService implements IProductService {
         // treat this as an update and overwrite whatever row already has that id.
         product.setId(null);
         return productRepository.save(product);
+    }
+
+    @Override
+    public void deleteProduct(Long id) {
+        if (!productRepository.existsById(id)) {
+            throw new ProductException("Product with id " + id + " doesn't exists", ProductExceptionType.PRODUCT_NOT_FOUND);
+        }
+        productRepository.deleteById(id);
     }
 }

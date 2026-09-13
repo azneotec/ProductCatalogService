@@ -9,4 +9,5 @@ public interface IProductService {
     Product getProductDetailsById(Long id);
     Product replaceProduct(Long id, Product product);
     Product createProduct(Product product);
+    void deleteProduct(Long id);
 }

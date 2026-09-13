@@ -65,8 +65,11 @@ public class ProductController {
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
 
-    // TODO: DELETE product by id
-    // TODO: UPDATE product by id
+    @DeleteMapping("/products/{id}")
+    public ResponseEntity<Void> deleteProductById(@PathVariable Long id) {
+        productService.deleteProduct(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
 
     private ProductDto mapToProductDto(Product product) {
         ProductDto productDto = new ProductDto();

@@ -1,6 +1,6 @@
 package com.azneotech.productcatalogservice.controllers;
 
-import com.azneotech.productcatalogservice.exceptions.FakeStoreApiProductException;
+import com.azneotech.productcatalogservice.exceptions.ProductException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,8 +14,8 @@ public class ControllerAdvisor {
         return new ResponseEntity<>(exception.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(FakeStoreApiProductException.class)
-    private ResponseEntity<String> handleFakeStoreApiProductException(FakeStoreApiProductException exception) {
+    @ExceptionHandler(ProductException.class)
+    private ResponseEntity<String> handleProductException(ProductException exception) {
         return switch (exception.getExceptionType()) {
             case PRODUCT_NOT_FOUND -> new ResponseEntity<>(exception.getMessage(), HttpStatus.NOT_FOUND);
             case PRODUCT_ALREADY_EXISTS -> new ResponseEntity<>(exception.getMessage(), HttpStatus.CONFLICT);

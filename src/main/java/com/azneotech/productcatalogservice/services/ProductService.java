@@ -1,8 +1,8 @@
 package com.azneotech.productcatalogservice.services;
 
 import com.azneotech.productcatalogservice.dtos.FakeStoreProductDto;
-import com.azneotech.productcatalogservice.exceptions.FakeStoreApiExceptionType;
-import com.azneotech.productcatalogservice.exceptions.FakeStoreApiProductException;
+import com.azneotech.productcatalogservice.exceptions.ProductExceptionType;
+import com.azneotech.productcatalogservice.exceptions.ProductException;
 import com.azneotech.productcatalogservice.models.Category;
 import com.azneotech.productcatalogservice.models.Product;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -74,7 +74,7 @@ public class ProductService implements IProductService {
     @Override
     public Product replaceProduct(Long id, Product product) {
         if (getProductDetailsById(product.getId()) == null) {
-            throw new FakeStoreApiProductException("Product with id " + id + " doesn't exists", FakeStoreApiExceptionType.PRODUCT_NOT_FOUND);
+            throw new ProductException("Product with id " + id + " doesn't exists", ProductExceptionType.PRODUCT_NOT_FOUND);
         }
         FakeStoreProductDto fakeStoreProductDto = mapToProductDto(product);
         ResponseEntity<FakeStoreProductDto> responseEntity = putForEntity(
@@ -99,7 +99,7 @@ public class ProductService implements IProductService {
             String exceptionMessage = String.format(
                     "Product with id %d already exists. Cannot add a new product: %s",
                     product.getId(), product.getTitle());
-            throw new FakeStoreApiProductException(exceptionMessage, FakeStoreApiExceptionType.PRODUCT_ALREADY_EXISTS);
+            throw new ProductException(exceptionMessage, ProductExceptionType.PRODUCT_ALREADY_EXISTS);
         }
         FakeStoreProductDto fakeStoreProductDto = mapToProductDto(product);
         RestTemplate restTemplate = getRestTemplate();
@@ -112,6 +112,15 @@ public class ProductService implements IProductService {
             return mapToProduct(responseEntity.getBody());
         }
         return null;
+    }
+
+    @Override
+    public void deleteProduct(Long id) {
+        if (getProductDetailsById(id) == null) {
+            throw new ProductException("Product with id " + id + " doesn't exists", ProductExceptionType.PRODUCT_NOT_FOUND);
+        }
+        RestTemplate restTemplate = getRestTemplate();
+        restTemplate.delete("/products/{id}", id);
     }
 
     public <T> ResponseEntity<T> putForEntity(String url, @Nullable Object request,
