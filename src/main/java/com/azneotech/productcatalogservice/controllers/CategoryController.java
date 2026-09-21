@@ -2,13 +2,11 @@ package com.azneotech.productcatalogservice.controllers;
 
 import com.azneotech.productcatalogservice.dtos.CategoryDto;
 import com.azneotech.productcatalogservice.models.Category;
-import com.azneotech.productcatalogservice.repos.CategoryRepository;
 import com.azneotech.productcatalogservice.services.ICategoryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -41,7 +39,6 @@ public class CategoryController {
     private Category mapToCategory(CategoryDto categoryDto) {
         Category category = new Category();
         category.setName(categoryDto.getName());
-        category.setDescription(categoryDto.getDescription());
         return category;
     }
 
@@ -49,7 +46,6 @@ public class CategoryController {
         CategoryDto categoryDto = new CategoryDto();
         categoryDto.setId(category.getId());
         categoryDto.setName(category.getName());
-        categoryDto.setDescription(category.getDescription());
         return categoryDto;
     }
 }

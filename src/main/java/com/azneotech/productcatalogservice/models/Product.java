@@ -1,6 +1,7 @@
 package com.azneotech.productcatalogservice.models;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
 import lombok.Getter;
@@ -27,75 +28,9 @@ public class Product extends BaseModel {
     @ManyToOne
     private Category category;
 
-    private Boolean isSaleEligible;
-
-    /*
-    private String shortDescription;
-    private String brand;
-    private String sku;
-    private BigDecimal price;
-    private BigDecimal discountedPrice;
-    private String currency;
-    private List<ProductImage> images = new ArrayList<>();
-    private List<Specification> specifications = new ArrayList<>();
-    private Integer stockQuantity;
-    private ProductStatus status;
-    private Double averageRating;
-    private Integer ratingCount;
-
-    public void addImage(ProductImage image) {
-        if (image == null) {
-            return;
-        }
-        if (images == null) {
-            images = new ArrayList<>();
-        }
-        images.add(image);
-    }
-
-    public void addSpecification(Specification specification) {
-        if (specification == null) {
-            return;
-        }
-        if (specifications == null) {
-            specifications = new ArrayList<>();
-        }
-        specifications.add(specification);
-    }
-
-    public ProductImage getPrimaryImage() {
-        if (images == null || images.isEmpty()) {
-            return null;
-        }
-        return images.stream()
-                .filter(ProductImage::isPrimary)
-                .findFirst()
-                .orElse(images.get(0));
-    }
-
-    public Map<String, List<Specification>> getSpecificationsByGroup() {
-        Map<String, List<Specification>> grouped = new LinkedHashMap<>();
-        if (specifications == null) {
-            return grouped;
-        }
-        for (Specification specification : specifications) {
-            String group = specification.getGroup();
-            if (group == null || group.isBlank()) {
-                group = "General";
-            }
-            grouped.computeIfAbsent(group, key -> new ArrayList<>()).add(specification);
-        }
-        return grouped;
-    }
-
-    public boolean isAvailable() {
-        return status == ProductStatus.ACTIVE && stockQuantity != null && stockQuantity > 0;
-    }
-
-    public BigDecimal getEffectivePrice() {
-        return discountedPrice != null ? discountedPrice : price;
-    }
-    */
+    // Hibernate leaves this null (not an empty Rating) when both columns are NULL.
+    @Embedded
+    private Rating rating;
 
     @Override
     public boolean equals(Object other) {
@@ -115,7 +50,6 @@ public class Product extends BaseModel {
 
     @Override
     public String toString() {
-//        return "Product{id=" + getId() + ", title='" + title + "', sku='" + sku + "'}";
         return "Product{id=" + getId() + ", title='" + title + "'}";
     }
 

@@ -3,9 +3,8 @@ package com.azneotech.productcatalogservice.repos;
 import com.azneotech.productcatalogservice.models.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.Optional;
+import java.util.List;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
-//    Optional<Product> findById(Long id);
-//    Product save(Product product);
+    List<Product> findByCategoryId(Long categoryId);
 }

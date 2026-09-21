@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
+@SpringBootTest(properties = "catalog.seed.enabled=false")
 public class ProductControllerTest {
 
     @Autowired
@@ -42,7 +42,7 @@ public class ProductControllerTest {
         assertNotNull(productDtoResponseEntity.getBody());
         assertEquals(HttpStatus.OK, productDtoResponseEntity.getStatusCode());
         assertEquals(productId, productDtoResponseEntity.getBody().getId());
-        assertEquals("Iphone 17", productDtoResponseEntity.getBody().getName());
+        assertEquals("Iphone 17", productDtoResponseEntity.getBody().getTitle());
 
         verify(productService, times(1))
                 .getProductDetailsById(productId);
