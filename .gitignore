@@ -43,3 +43,6 @@ build/
 .DS_Store
 Thumbs.db
 CLAUDE.md
+
+# Local secrets
+.env

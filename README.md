@@ -19,12 +19,13 @@ A Spring Boot REST service for browsing and searching a product catalog. Product
    CREATE DATABASE product_catalog_service;
    ```
 
-   The defaults expect user `root` / password `password`. Override them with the properties or environment variables below if your setup differs.
+   The defaults expect user `root` / password `password`. Override them with the environment variables described in [Configuration](#configuration) if your setup differs (e.g. a remote database such as RDS).
 
 2. Run the application:
 
    ```bash
-   ./mvnw spring-boot:run
+   ./mvnw spring-boot:run     # local MySQL defaults, or whatever DB_* is set to in your shell
+   make run                   # loads .env first, then runs the built jar (see "Building with make")
    ```
 
    On startup the app will, in order:
@@ -32,7 +33,7 @@ A Spring Boot REST service for browsing and searching a product catalog. Product
    - seed the 4 categories and 20 products from FakeStore **if the `product` table is empty**,
    - build the Lucene search index from the database.
 
-   The server listens on `http://localhost:8080`. Health check: `GET /actuator/health`.
+   The server listens on the port set by `server.port` (`5000` by default; `.env.example` overrides it to `8080` via `SERVER_PORT`, because macOS AirPlay Receiver occupies 5000). The examples below assume `8080`. Health check: `GET /actuator/health`.
 
 3. Run the tests:
 
@@ -41,16 +42,50 @@ A Spring Boot REST service for browsing and searching a product catalog. Product
    ./mvnw test -Dtest=LuceneProductSearchServiceTest   # a single class
    ```
 
-   The Lucene, seeder and service tests are plain JUnit/Mockito and need nothing external. The `@SpringBootTest` classes need the local MySQL instance (seeding is disabled for them).
+   The Lucene, seeder and service tests are plain JUnit/Mockito and need nothing external. The `@SpringBootTest` classes need the local MySQL instance (seeding is disabled for them). They run with the `test` profile (`src/test/resources/application-test.properties`), which pins the datasource to `localhost:3306` regardless of any `DB_*` variables, so tests never touch a remote database.
 
 ## Configuration
 
-All settings live in `src/main/resources/application.properties` and can be overridden the usual Spring Boot ways (`-D` flags, `application-local.properties`, or environment variables such as `SPRING_DATASOURCE_URL`).
+All settings live in `src/main/resources/application.properties` and can be overridden the usual Spring Boot ways (`-D` flags, `application-local.properties`, or environment variables).
+
+### Environment variables
+
+Sensitive values are never hard-coded: the datasource settings are placeholders resolved from the environment when the app starts, falling back to the local-dev defaults.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `DB_URL` | `jdbc:mysql://localhost:3306/product_catalog_service` | JDBC URL of the database |
+| `DB_USERNAME` | `root` | database user |
+| `DB_PASSWORD` | `password` | database password |
+| `SERVER_PORT` | `5000` (from `server.port`) | HTTP port (Spring Boot binds this automatically) |
+
+For local use, copy the template and fill it in:
+
+```bash
+cp .env.example .env      # .env is gitignored - never commit real credentials
+```
+
+Spring Boot does not read `.env` by itself. Load it into your shell (`set -a; source .env; set +a`), use `make` (below), or add the variables to your IDE run configuration.
+
+### Building with make
+
+The `Makefile` loads `.env` before invoking Maven or Java:
+
+| Command | What it does |
+|---|---|
+| `make jar` | build `target/ProductCatalogService-0.0.1-SNAPSHOT.jar` (tests skipped; `make jar SKIP_TESTS=false` runs them) |
+| `make run` | run the built jar with `.env` loaded |
+| `make test` | run the tests against local MySQL (test profile) |
+| `make clean` | `./mvnw clean` |
+
+The jar contains only the `${DB_*}` placeholders, not the values, so the same artifact runs in any environment; the values are supplied by the environment at startup.
+
+### Properties
 
 | Property | Default | Purpose |
 |---|---|---|
-| `spring.datasource.url` | `jdbc:mysql://localhost:3306/product_catalog_service` | database location |
-| `spring.datasource.username` / `password` | `root` / `password` | database credentials |
+| `spring.datasource.url` | `${DB_URL}` → local MySQL | database location |
+| `spring.datasource.username` / `password` | `${DB_USERNAME}` / `${DB_PASSWORD}` → `root` / `password` | database credentials |
 | `catalog.seed.enabled` | `true` | seed from FakeStore when the product table is empty |
 | `catalog.seed.fakestore.base-url` | `https://fakestoreapi.com` | seed source |
 | `catalog.search.engine` | `lucene` | search backend (`elasticsearch` reserved for a future implementation) |
