@@ -2,6 +2,7 @@ package com.azneotech.productcatalogservice.controllers;
 
 import com.azneotech.productcatalogservice.dtos.SortParams;
 import com.azneotech.productcatalogservice.dtos.SortType;
+import com.azneotech.productcatalogservice.models.Category;
 import com.azneotech.productcatalogservice.models.Product;
 import com.azneotech.productcatalogservice.services.JpaBasedSearchService;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(SearchController.class)
@@ -59,6 +61,32 @@ public class SearchControllerMvcTest {
         assertEquals(SortType.DESC, sortParams.get(0).getSortType());
         assertEquals("id", sortParams.get(1).getSortCriteria());
         assertEquals(SortType.ASC, sortParams.get(1).getSortType());
+    }
+
+    @Test
+    void testSearchAPI_ReturnsProductDtosInPage() throws Exception {
+        Category category = new Category();
+        category.setId(4L);
+        category.setName("men's clothing");
+        Product product = new Product();
+        product.setId(7L);
+        product.setTitle("Shirt");
+        product.setPrice(19.5f);
+        product.setImageUrl("http://img/7.png");
+        product.setCategory(category);
+        when(searchService.searchProducts(any(), any(), any(), any()))
+                .thenReturn(new PageImpl<>(List.of(product)));
+
+        mockMvc.perform(post("/search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"query\":\"shirt\",\"pageSize\":5,\"pageNumber\":0}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].id").value(7))
+                .andExpect(jsonPath("$.content[0].image").value("http://img/7.png"))
+                .andExpect(jsonPath("$.content[0].category.name").value("men's clothing"))
+                .andExpect(jsonPath("$.content[0].imageUrl").doesNotExist())
+                .andExpect(jsonPath("$.content[0].createdAt").doesNotExist())
+                .andExpect(jsonPath("$.content[0].state").doesNotExist());
     }
 
     @Test
