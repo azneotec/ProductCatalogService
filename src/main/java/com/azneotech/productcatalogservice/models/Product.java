@@ -1,5 +1,6 @@
 package com.azneotech.productcatalogservice.models;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -26,6 +27,7 @@ public class Product extends BaseModel {
     // No cascade: categories are created/managed independently via CategoryService,
     // so saving/deleting a product must never persist, merge, or remove its category.
     @ManyToOne
+    @JsonManagedReference
     private Category category;
 
     // Hibernate leaves this null (not an empty Rating) when both columns are NULL.

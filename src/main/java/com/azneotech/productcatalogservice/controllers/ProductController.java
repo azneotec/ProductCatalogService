@@ -3,6 +3,7 @@ package com.azneotech.productcatalogservice.controllers;
 import com.azneotech.productcatalogservice.dtos.CategoryDto;
 import com.azneotech.productcatalogservice.dtos.ProductDto;
 import com.azneotech.productcatalogservice.dtos.RatingDto;
+import com.azneotech.productcatalogservice.mappers.ProductMappers;
 import com.azneotech.productcatalogservice.models.Category;
 import com.azneotech.productcatalogservice.models.Product;
 import com.azneotech.productcatalogservice.models.Rating;
@@ -51,7 +52,7 @@ public class ProductController {
         } else {
             products = productService.getAllProducts();
         }
-        return new ResponseEntity<>(mapToProductDtos(products), HttpStatus.OK);
+        return new ResponseEntity<>(ProductMappers.mapToProductDtos(products), HttpStatus.OK);
     }
 
     @GetMapping("/products/search")
@@ -60,7 +61,7 @@ public class ProductController {
             throw new IllegalArgumentException("Please pass a non-blank search query as q");
         }
         List<Product> products = productService.searchProducts(query);
-        return new ResponseEntity<>(mapToProductDtos(products), HttpStatus.OK);
+        return new ResponseEntity<>(ProductMappers.mapToProductDtos(products), HttpStatus.OK);
     }
 
     @GetMapping("/products/{id}")
@@ -72,7 +73,7 @@ public class ProductController {
         if (product == null) {
             throw new RuntimeException("Product is not available");
         }
-        return new ResponseEntity<>(mapToProductDto(product), HttpStatus.OK);
+        return new ResponseEntity<>(ProductMappers.mapToProductDto(product), HttpStatus.OK);
     }
 
     @PutMapping("/products/{id}")
@@ -83,7 +84,7 @@ public class ProductController {
         Product inputProduct = mapToProduct(productDto);
         inputProduct.setId(productId);
         Product updatedProduct = productService.replaceProduct(productId, inputProduct);
-        ProductDto responseDto = mapToProductDto(updatedProduct);
+        ProductDto responseDto = ProductMappers.mapToProductDto(updatedProduct);
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
 
@@ -91,7 +92,7 @@ public class ProductController {
     public ResponseEntity<ProductDto> createProduct(@RequestBody ProductDto productDto) {
         Product inputProduct = mapToProduct(productDto);
         Product createdProduct = productService.createProduct(inputProduct);
-        ProductDto responseDto = mapToProductDto(createdProduct);
+        ProductDto responseDto = ProductMappers.mapToProductDto(createdProduct);
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
 
@@ -99,35 +100,6 @@ public class ProductController {
     public ResponseEntity<Void> deleteProductById(@PathVariable Long id) {
         productService.deleteProduct(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    }
-
-    private List<ProductDto> mapToProductDtos(List<Product> products) {
-        return products.stream()
-                .map(this::mapToProductDto)
-                .toList();
-    }
-
-    private ProductDto mapToProductDto(Product product) {
-        ProductDto productDto = new ProductDto();
-        productDto.setId(product.getId());
-        productDto.setTitle(product.getTitle());
-        productDto.setPrice(product.getPrice());
-        productDto.setDescription(product.getDescription());
-        productDto.setImage(product.getImageUrl());
-
-        if (product.getCategory() != null) {
-            CategoryDto categoryDto = new CategoryDto();
-            categoryDto.setId(product.getCategory().getId());
-            categoryDto.setName(product.getCategory().getName());
-            productDto.setCategory(categoryDto);
-        }
-        if (product.getRating() != null) {
-            RatingDto ratingDto = new RatingDto();
-            ratingDto.setRate(product.getRating().getRate());
-            ratingDto.setCount(product.getRating().getCount());
-            productDto.setRating(ratingDto);
-        }
-        return productDto;
     }
 
     private Product mapToProduct(ProductDto productDto) {

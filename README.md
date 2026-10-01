@@ -110,6 +110,24 @@ Base URL: `http://localhost:8080`. All responses are JSON; error responses carry
 
 Passing both `categoryId` and `category` on `/products` is a `400`.
 
+### Search with paging and sorting
+
+`POST /search` does a case-insensitive title match, paged and optionally sorted. Body:
+
+```json
+{
+  "query": "shirt",
+  "pageSize": 5,
+  "pageNumber": 0,
+  "sortParams": [
+    { "sortCriteria": "price", "sortType": "DESC" },
+    { "sortCriteria": "id", "sortType": "ASC" }
+  ]
+}
+```
+
+`sortParams` is optional; list order is sort priority, `sortType` is `ASC` (default) or `DESC`, and omitting `sortParams` leaves the results unsorted. `sortCriteria` is a `Product` property name (`id`, `title`, `price`, `imageUrl`, `rating.rate`, `category.name`, `createdAt`, …) and is passed straight to Spring Data, so an unknown name currently comes back as a `404`.
+
 Product shape (request and response):
 
 ```json
