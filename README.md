@@ -102,7 +102,7 @@ Base URL: `http://localhost:8080`. All responses are JSON; error responses carry
 | `GET` | `/products` | all products | |
 | `GET` | `/products?categoryId={id}` | products in a category, by id | `400` id ≤ 0 or non-numeric · `404` unknown category |
 | `GET` | `/products?category={name}` | products in a category, by name (case-insensitive) | `400` blank · `404` unknown category |
-| `GET` | `/products/search?q={keywords}` | keyword search over title, category and description, best match first | `400` missing/blank `q` |
+| `GET` | `/products/search?q={keywords}&page=&size=&sort=` | keyword search over title, category and description, best match first; paged and optionally sorted (see below) | `400` missing/blank `q` · `404` unknown `sort` field |
 | `GET` | `/products/{id}` | product details | `400` id ≤ 0 · `404` not found |
 | `POST` | `/products` | create a product (`201`) | `400` unknown `category.id` |
 | `PUT` | `/products/{id}` | replace a product | `400` unknown `category.id` · `404` not found |
@@ -110,7 +110,23 @@ Base URL: `http://localhost:8080`. All responses are JSON; error responses carry
 
 Passing both `categoryId` and `category` on `/products` is a `400`.
 
-### Search with paging and sorting
+### Paged, sorted keyword search
+
+`GET /products/search` returns a page wrapper:
+
+```bash
+curl 'http://localhost:8080/products/search?q=shirt&page=0&size=5&sort=price,desc&sort=id,asc'
+```
+
+```json
+{ "content": [ { "id": 14, "title": "…", "price": 999.99, "…": "…" } ], "page": 0, "size": 5, "totalElements": 12, "totalPages": 3 }
+```
+
+- `page` is 0-based (default `0`); `size` defaults to `10` and is capped at `100`.
+- `sort=field[,asc|desc]` can be repeated and applies in order; the field is a `Product` property name (`price`, `title`, `rating.rate`, `category.name`, `id`, …). Without `sort`, results are in relevance order. An unknown field currently comes back as a `404`.
+- Search considers at most the 1000 best matches; `totalElements` is capped by that.
+
+### Search with paging and sorting (JPA, title only)
 
 `POST /search` does a case-insensitive title match, paged and optionally sorted. Body:
 

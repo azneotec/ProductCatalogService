@@ -13,6 +13,11 @@ import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.inOrder;
@@ -114,18 +120,60 @@ public class StorageProductServiceTest {
         Product two = product(2L, "Tote bag");
         when(productRepository.findAllById(List.of(3L, 2L, 1L))).thenReturn(List.of(one, two));
 
-        List<Product> results = productService.searchProducts("bag");
+        Page<Product> results = productService.searchProducts("bag", PageRequest.of(0, 10));
 
-        assertEquals(List.of(two, one), results);
+        assertEquals(List.of(two, one), results.getContent());
+    }
+
+    @Test
+    public void testSearchProducts_Unsorted_HydratesOnlyRequestedPageInRelevanceOrder() {
+        when(searchService.search("bag", StorageProductService.MAX_SEARCH_RESULTS))
+                .thenReturn(List.of(5L, 4L, 3L, 2L, 1L));
+        Product three = product(3L, "Three");
+        Product two = product(2L, "Two");
+        when(productRepository.findAllById(List.of(3L, 2L))).thenReturn(List.of(two, three));
+
+        Page<Product> results = productService.searchProducts("bag", PageRequest.of(1, 2));
+
+        assertEquals(List.of(three, two), results.getContent());
+        assertEquals(5, results.getTotalElements());
+        assertEquals(3, results.getTotalPages());
+        verify(productRepository, never()).findByIdIn(anyCollection(), any(Pageable.class));
+    }
+
+    @Test
+    public void testSearchProducts_Unsorted_PageBeyondHits_ReturnsEmptyContentWithTotal() {
+        when(searchService.search("bag", StorageProductService.MAX_SEARCH_RESULTS)).thenReturn(List.of(2L, 1L));
+
+        Page<Product> results = productService.searchProducts("bag", PageRequest.of(5, 10));
+
+        assertTrue(results.getContent().isEmpty());
+        assertEquals(2, results.getTotalElements());
+        verify(productRepository, never()).findAllById(anyList());
+    }
+
+    @Test
+    public void testSearchProducts_Sorted_DelegatesSortAndPagingToDatabase() {
+        List<Long> ids = List.of(3L, 2L, 1L);
+        when(searchService.search("bag", StorageProductService.MAX_SEARCH_RESULTS)).thenReturn(ids);
+        Pageable pageable = PageRequest.of(0, 2, Sort.by(Sort.Direction.DESC, "price"));
+        Page<Product> expected = new PageImpl<>(List.of(product(2L, "Two"), product(1L, "One")), pageable, 3);
+        when(productRepository.findByIdIn(ids, pageable)).thenReturn(expected);
+
+        Page<Product> results = productService.searchProducts("bag", pageable);
+
+        assertSame(expected, results);
+        verify(productRepository, never()).findAllById(anyList());
     }
 
     @Test
     public void testSearchProducts_WithNoHits_SkipsDatabase() {
         when(searchService.search("zzz", StorageProductService.MAX_SEARCH_RESULTS)).thenReturn(List.of());
 
-        assertTrue(productService.searchProducts("zzz").isEmpty());
+        assertTrue(productService.searchProducts("zzz", PageRequest.of(0, 10)).isEmpty());
 
         verify(productRepository, never()).findAllById(anyList());
+        verify(productRepository, never()).findByIdIn(anyCollection(), any(Pageable.class));
     }
 
     @Test

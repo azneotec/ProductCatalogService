@@ -9,6 +9,9 @@ import com.azneotech.productcatalogservice.models.Product;
 import com.azneotech.productcatalogservice.repos.CategoryRepository;
 import com.azneotech.productcatalogservice.repos.ProductRepository;
 import com.azneotech.productcatalogservice.search.IProductSearchService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,7 +24,7 @@ import java.util.stream.Collectors;
 @Service
 public class StorageProductService implements IProductService {
 
-    static final int MAX_SEARCH_RESULTS = 50;
+    static final int MAX_SEARCH_RESULTS = 1000;
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
@@ -58,18 +61,30 @@ public class StorageProductService implements IProductService {
     }
 
     @Override
-    public List<Product> searchProducts(String query) {
+    public Page<Product> searchProducts(String query, Pageable pageable) {
         List<Long> ids = searchService.search(query, MAX_SEARCH_RESULTS);
         if (ids.isEmpty()) {
-            return List.of();
+            return Page.empty(pageable);
         }
-        Map<Long, Product> productsById = productRepository.findAllById(ids).stream()
+        if (pageable.getSort().isSorted()) {
+            // An explicit sort replaces relevance order, so let the DB sort and page the hits.
+            return productRepository.findByIdIn(ids, pageable);
+        }
+        // Relevance order lives only in the index: page over the ids, hydrate just that slice.
+        int from = (int) Math.min(pageable.getOffset(), ids.size());
+        int to = Math.min(from + pageable.getPageSize(), ids.size());
+        List<Long> pageIds = ids.subList(from, to);
+        if (pageIds.isEmpty()) {
+            return new PageImpl<>(List.of(), pageable, ids.size());
+        }
+        Map<Long, Product> productsById = productRepository.findAllById(pageIds).stream()
                 .collect(Collectors.toMap(Product::getId, Function.identity()));
-        // Keep the index's relevance order; drop ids the index has but the DB no longer does.
-        return ids.stream()
+        // Drop ids the index has but the DB no longer does.
+        List<Product> content = pageIds.stream()
                 .map(productsById::get)
                 .filter(Objects::nonNull)
                 .toList();
+        return new PageImpl<>(content, pageable, ids.size());
     }
 
     @Override

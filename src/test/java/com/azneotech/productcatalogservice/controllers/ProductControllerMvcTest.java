@@ -10,12 +10,20 @@ import com.azneotech.productcatalogservice.services.IProductService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.mockito.ArgumentCaptor;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -153,16 +161,62 @@ public class ProductControllerMvcTest {
     }
 
     @Test
-    public void testSearchProductsAPI_WithQuery_ReturnsMatchesInServiceOrder() throws Exception {
-        when(productService.searchProducts("bag")).thenReturn(List.of(
-                product(3L, "Tote Bag", null),
-                product(1L, "Backpack", null)));
+    public void testSearchProductsAPI_WithQuery_ReturnsPagedMatchesInServiceOrder() throws Exception {
+        when(productService.searchProducts(eq("bag"), any(Pageable.class))).thenAnswer(inv ->
+                new PageImpl<>(List.of(product(3L, "Tote Bag", null), product(1L, "Backpack", null)),
+                        inv.<Pageable>getArgument(1), 25));
 
         mockMvc.perform(get("/products/search").param("q", "bag"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].id").value(3))
-                .andExpect(jsonPath("$[1].id").value(1));
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].id").value(3))
+                .andExpect(jsonPath("$.content[1].id").value(1))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(10))
+                .andExpect(jsonPath("$.totalElements").value(25))
+                .andExpect(jsonPath("$.totalPages").value(3));
+    }
+
+    @Test
+    public void testSearchProductsAPI_WithoutPagingParams_UsesDefaultUnsortedFirstPage() throws Exception {
+        when(productService.searchProducts(eq("bag"), any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/products/search").param("q", "bag")).andExpect(status().isOk());
+
+        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+        verify(productService).searchProducts(eq("bag"), captor.capture());
+        assertEquals(0, captor.getValue().getPageNumber());
+        assertEquals(10, captor.getValue().getPageSize());
+        assertTrue(captor.getValue().getSort().isUnsorted());
+    }
+
+    @Test
+    public void testSearchProductsAPI_WithPageSizeAndSort_PassesPageableToService() throws Exception {
+        when(productService.searchProducts(eq("bag"), any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/products/search")
+                        .param("q", "bag").param("page", "1").param("size", "2")
+                        .param("sort", "price,desc").param("sort", "id,asc"))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+        verify(productService).searchProducts(eq("bag"), captor.capture());
+        Pageable pageable = captor.getValue();
+        assertEquals(1, pageable.getPageNumber());
+        assertEquals(2, pageable.getPageSize());
+        assertEquals(List.of(Sort.Order.desc("price"), Sort.Order.asc("id")), pageable.getSort().toList());
+    }
+
+    @Test
+    public void testSearchProductsAPI_WithOversizedPage_ClampsToMaxPageSize() throws Exception {
+        when(productService.searchProducts(eq("bag"), any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/products/search").param("q", "bag").param("size", "500"))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+        verify(productService).searchProducts(eq("bag"), captor.capture());
+        assertEquals(100, captor.getValue().getPageSize());
     }
 
     @Test
@@ -171,7 +225,7 @@ public class ProductControllerMvcTest {
                 .andExpect(status().isBadRequest());
         mockMvc.perform(get("/products/search"))
                 .andExpect(status().isBadRequest());
-        verify(productService, never()).searchProducts(anyString());
+        verify(productService, never()).searchProducts(anyString(), any(Pageable.class));
     }
 
 }
