@@ -1,5 +1,6 @@
 package com.azneotech.productcatalogservice.controllers;
 
+import com.azneotech.productcatalogservice.exceptions.AuthException;
 import com.azneotech.productcatalogservice.exceptions.CategoryException;
 import com.azneotech.productcatalogservice.exceptions.ProductException;
 import org.springframework.http.HttpStatus;
@@ -31,6 +32,15 @@ public class ControllerAdvisor {
     private ResponseEntity<String> handleCategoryException(CategoryException exception) {
         return switch (exception.getExceptionType()) {
             case CATEGORY_NOT_FOUND -> new ResponseEntity<>(exception.getMessage(), HttpStatus.NOT_FOUND);
+        };
+    }
+
+    @ExceptionHandler(AuthException.class)
+    private ResponseEntity<String> handleAuthException(AuthException exception) {
+        return switch (exception.getExceptionType()) {
+            case UNAUTHENTICATED -> new ResponseEntity<>(exception.getMessage(), HttpStatus.UNAUTHORIZED);
+            case FORBIDDEN -> new ResponseEntity<>(exception.getMessage(), HttpStatus.FORBIDDEN);
+            case AUTH_SERVICE_UNAVAILABLE -> new ResponseEntity<>(exception.getMessage(), HttpStatus.SERVICE_UNAVAILABLE);
         };
     }
 

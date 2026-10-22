@@ -8,11 +8,13 @@ import com.azneotech.productcatalogservice.mappers.ProductMappers;
 import com.azneotech.productcatalogservice.models.Category;
 import com.azneotech.productcatalogservice.models.Product;
 import com.azneotech.productcatalogservice.models.Rating;
+import com.azneotech.productcatalogservice.services.IAuthorizationService;
 import com.azneotech.productcatalogservice.services.ICategoryService;
 import com.azneotech.productcatalogservice.services.IProductService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,10 +26,13 @@ public class ProductController {
 
     private final IProductService productService;
     private final ICategoryService categoryService;
+    private final IAuthorizationService authorizationService;
 
-    public ProductController(IProductService productService, ICategoryService categoryService) {
+    public ProductController(IProductService productService, ICategoryService categoryService,
+                             IAuthorizationService authorizationService) {
         this.productService = productService;
         this.categoryService = categoryService;
+        this.authorizationService = authorizationService;
     }
 
     /**
@@ -90,9 +95,11 @@ public class ProductController {
 
     @PutMapping("/products/{id}")
     public ResponseEntity<ProductDto> updateProductDetailsById(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization,
             @PathVariable("id") Long productId,
             @RequestBody ProductDto productDto
     ) {
+        authorizationService.requireAdmin(authorization);
         Product inputProduct = mapToProduct(productDto);
         inputProduct.setId(productId);
         Product updatedProduct = productService.replaceProduct(productId, inputProduct);
@@ -101,7 +108,10 @@ public class ProductController {
     }
 
     @PostMapping("/products")
-    public ResponseEntity<ProductDto> createProduct(@RequestBody ProductDto productDto) {
+    public ResponseEntity<ProductDto> createProduct(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization,
+            @RequestBody ProductDto productDto) {
+        authorizationService.requireAdmin(authorization);
         Product inputProduct = mapToProduct(productDto);
         Product createdProduct = productService.createProduct(inputProduct);
         ProductDto responseDto = ProductMappers.mapToProductDto(createdProduct);
@@ -109,9 +119,20 @@ public class ProductController {
     }
 
     @DeleteMapping("/products/{id}")
-    public ResponseEntity<Void> deleteProductById(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteProductById(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization,
+            @PathVariable Long id) {
+        authorizationService.requireAdmin(authorization);
         productService.deleteProduct(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @GetMapping("/products/{productId}/users/{userId}")
+    public ResponseEntity<ProductDto> getProductDetailsBasedOnUserRole(
+            @PathVariable Long productId, @PathVariable Long userId) {
+        Product product = productService.getProductBasedOnUserRole(productId, userId);
+        ProductDto responseDto = ProductMappers.mapToProductDto(product);
+        return ResponseEntity.ok(responseDto);
     }
 
     private Product mapToProduct(ProductDto productDto) {

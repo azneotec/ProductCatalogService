@@ -2,9 +2,12 @@ package com.azneotech.productcatalogservice.controllers;
 
 import com.azneotech.productcatalogservice.exceptions.CategoryException;
 import com.azneotech.productcatalogservice.exceptions.CategoryExceptionType;
+import com.azneotech.productcatalogservice.exceptions.AuthException;
+import com.azneotech.productcatalogservice.exceptions.AuthExceptionType;
 import com.azneotech.productcatalogservice.models.Category;
 import com.azneotech.productcatalogservice.models.Product;
 import com.azneotech.productcatalogservice.models.Rating;
+import com.azneotech.productcatalogservice.services.IAuthorizationService;
 import com.azneotech.productcatalogservice.services.ICategoryService;
 import com.azneotech.productcatalogservice.services.IProductService;
 import org.junit.jupiter.api.Test;
@@ -15,6 +18,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -25,10 +29,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -43,6 +51,9 @@ public class ProductControllerMvcTest {
 
     @MockBean
     private ICategoryService categoryService;
+
+    @MockBean
+    private IAuthorizationService authorizationService;
 
     private static Product product(Long id, String title, Category category) {
         Product product = new Product();
@@ -228,4 +239,76 @@ public class ProductControllerMvcTest {
         verify(productService, never()).searchProducts(anyString(), any(Pageable.class));
     }
 
+
+    private static final String PRODUCT_BODY = "{\"title\":\"Lamp\",\"price\":12.5}";
+
+    @Test
+    public void testCreateProductAPI_AsAdmin_Returns201() throws Exception {
+        when(productService.createProduct(any())).thenReturn(product(9L, "Lamp", null));
+
+        mockMvc.perform(post("/products").header("Authorization", "Bearer good")
+                        .contentType(MediaType.APPLICATION_JSON).content(PRODUCT_BODY))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(9));
+
+        verify(authorizationService).requireAdmin("Bearer good");
+    }
+
+    @Test
+    public void testUpdateProductAPI_AsAdmin_Returns200() throws Exception {
+        when(productService.replaceProduct(eq(9L), any())).thenReturn(product(9L, "Lamp", null));
+
+        mockMvc.perform(put("/products/9").header("Authorization", "Bearer good")
+                        .contentType(MediaType.APPLICATION_JSON).content(PRODUCT_BODY))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Lamp"));
+
+        verify(authorizationService).requireAdmin("Bearer good");
+    }
+
+    @Test
+    public void testDeleteProductAPI_AsAdmin_Returns204() throws Exception {
+        mockMvc.perform(delete("/products/9").header("Authorization", "Bearer good"))
+                .andExpect(status().isNoContent());
+
+        verify(authorizationService).requireAdmin("Bearer good");
+        verify(productService).deleteProduct(9L);
+    }
+
+    @Test
+    public void testWriteAPIs_WithoutValidToken_Return401AndDoNotTouchService() throws Exception {
+        doThrow(new AuthException("Missing bearer token", AuthExceptionType.UNAUTHENTICATED))
+                .when(authorizationService).requireAdmin(null);
+
+        mockMvc.perform(post("/products").contentType(MediaType.APPLICATION_JSON).content(PRODUCT_BODY))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(put("/products/9").contentType(MediaType.APPLICATION_JSON).content(PRODUCT_BODY))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(delete("/products/9"))
+                .andExpect(status().isUnauthorized());
+
+        verify(productService, never()).createProduct(any());
+        verify(productService, never()).replaceProduct(anyLong(), any());
+        verify(productService, never()).deleteProduct(anyLong());
+    }
+
+    @Test
+    public void testWriteAPIs_AsNonAdmin_Return403() throws Exception {
+        doThrow(new AuthException("Requires ROLE_ADMIN", AuthExceptionType.FORBIDDEN))
+                .when(authorizationService).requireAdmin("Bearer user");
+
+        mockMvc.perform(delete("/products/9").header("Authorization", "Bearer user"))
+                .andExpect(status().isForbidden());
+
+        verify(productService, never()).deleteProduct(anyLong());
+    }
+
+    @Test
+    public void testReadAPIs_AreNotGuarded() throws Exception {
+        when(productService.getAllProducts()).thenReturn(List.of());
+
+        mockMvc.perform(get("/products")).andExpect(status().isOk());
+
+        verify(authorizationService, never()).requireAdmin(any());
+    }
 }

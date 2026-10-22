@@ -2,7 +2,9 @@ package com.azneotech.productcatalogservice.controllers;
 
 import com.azneotech.productcatalogservice.dtos.CategoryDto;
 import com.azneotech.productcatalogservice.models.Category;
+import com.azneotech.productcatalogservice.services.IAuthorizationService;
 import com.azneotech.productcatalogservice.services.ICategoryService;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,9 +16,11 @@ import java.util.List;
 public class CategoryController {
 
     private final ICategoryService categoryService;
+    private final IAuthorizationService authorizationService;
 
-    public CategoryController(ICategoryService categoryService) {
+    public CategoryController(ICategoryService categoryService, IAuthorizationService authorizationService) {
         this.categoryService = categoryService;
+        this.authorizationService = authorizationService;
     }
 
     @GetMapping
@@ -31,7 +35,10 @@ public class CategoryController {
     }
 
     @PostMapping
-    public ResponseEntity<CategoryDto> createCategory(@RequestBody CategoryDto categoryDto) {
+    public ResponseEntity<CategoryDto> createCategory(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization,
+            @RequestBody CategoryDto categoryDto) {
+        authorizationService.requireAdmin(authorization);
         Category category = categoryService.createCategory(mapToCategory(categoryDto));
         return ResponseEntity.status(HttpStatus.CREATED).body(mapToCategoryDto(category));
     }
