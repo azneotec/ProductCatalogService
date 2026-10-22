@@ -17,6 +17,7 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.BoostQuery;
+import org.apache.lucene.search.FuzzyQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
@@ -48,6 +49,10 @@ import java.util.Map;
  * and, for tokens of {@value #MIN_PREFIX_LENGTH}+ chars, as a lower-weight
  * prefix. Tokens are OR-ed together, so documents matching more of them
  * simply rank higher.
+ * <p>
+ * Typos are corrected per token: a token that has no exact or prefix match anywhere in the index is
+ * matched fuzzily instead (see {@link #fuzzyTokenQuery}). Tokens that do match are never fuzzed, so a
+ * correctly spelled word doesn't pull in near-miss words ("shirt" stays clear of "short").
  */
 @Service
 @ConditionalOnProperty(name = "catalog.search.engine", havingValue = "lucene", matchIfMissing = true)
@@ -62,6 +67,13 @@ public class LuceneProductSearchService implements IProductSearchService, AutoCl
     private static final float PREFIX_BOOST_FACTOR = 0.5f;
     private static final int MIN_PREFIX_LENGTH = 3;
     private static final int MAX_QUERY_TOKENS = 10;
+    private static final int MIN_FUZZY_LENGTH = 4;
+    private static final int MAX_EDITS_SHORT_TOKEN = 1;
+    private static final int MAX_EDITS_LONG_TOKEN = 2;
+    private static final int LONG_TOKEN_LENGTH = 6;
+    // The first letter must be right: typos rarely hit it, and it keeps the fuzzy term scan cheap.
+    private static final int FUZZY_PREFIX_LENGTH = 1;
+    private static final float FUZZY_BOOST_FACTOR = 0.5f;
 
     static {
         FIELD_BOOSTS.put(FIELD_TITLE, 3f);
@@ -125,13 +137,14 @@ public class LuceneProductSearchService implements IProductSearchService, AutoCl
 
     @Override
     public List<Long> search(String query, int limit) {
-        Query luceneQuery = buildQuery(query);
-        if (luceneQuery == null) {
+        List<String> tokens = analyze(query);
+        if (tokens.isEmpty()) {
             return List.of();
         }
         try {
             IndexSearcher searcher = searcherManager.acquire();
             try {
+                Query luceneQuery = buildQuery(searcher, tokens);
                 TopDocs topDocs = searcher.search(luceneQuery, Math.max(1, limit));
                 StoredFields storedFields = searcher.storedFields();
                 List<Long> ids = new ArrayList<>(topDocs.scoreDocs.length);
@@ -182,27 +195,43 @@ public class LuceneProductSearchService implements IProductSearchService, AutoCl
         return value == null ? "" : value;
     }
 
-    /** @return null when the input analyses down to no tokens. */
-    private Query buildQuery(String rawQuery) {
-        List<String> tokens = analyze(rawQuery);
-        if (tokens.isEmpty()) {
-            return null;
-        }
+    private Query buildQuery(IndexSearcher searcher, List<String> tokens) throws IOException {
         BooleanQuery.Builder root = new BooleanQuery.Builder();
         for (String token : tokens) {
-            BooleanQuery.Builder tokenQuery = new BooleanQuery.Builder();
-            for (Map.Entry<String, Float> fieldBoost : FIELD_BOOSTS.entrySet()) {
-                Term term = new Term(fieldBoost.getKey(), token);
-                tokenQuery.add(new BoostQuery(new TermQuery(term), fieldBoost.getValue()),
-                        BooleanClause.Occur.SHOULD);
-                if (token.length() >= MIN_PREFIX_LENGTH) {
-                    tokenQuery.add(new BoostQuery(new PrefixQuery(term), fieldBoost.getValue() * PREFIX_BOOST_FACTOR),
-                            BooleanClause.Occur.SHOULD);
-                }
-            }
-            root.add(tokenQuery.build(), BooleanClause.Occur.SHOULD);
+            Query exactOrPrefix = exactOrPrefixTokenQuery(token);
+            boolean looksMistyped = token.length() >= MIN_FUZZY_LENGTH && searcher.count(exactOrPrefix) == 0;
+            root.add(looksMistyped ? fuzzyTokenQuery(token) : exactOrPrefix, BooleanClause.Occur.SHOULD);
         }
         return root.build();
+    }
+
+    private static Query exactOrPrefixTokenQuery(String token) {
+        BooleanQuery.Builder tokenQuery = new BooleanQuery.Builder();
+        for (Map.Entry<String, Float> fieldBoost : FIELD_BOOSTS.entrySet()) {
+            Term term = new Term(fieldBoost.getKey(), token);
+            tokenQuery.add(new BoostQuery(new TermQuery(term), fieldBoost.getValue()),
+                    BooleanClause.Occur.SHOULD);
+            if (token.length() >= MIN_PREFIX_LENGTH) {
+                tokenQuery.add(new BoostQuery(new PrefixQuery(term), fieldBoost.getValue() * PREFIX_BOOST_FACTOR),
+                        BooleanClause.Occur.SHOULD);
+            }
+        }
+        return tokenQuery.build();
+    }
+
+    /**
+     * Typo-tolerant match for a token the index has never seen: up to 1 edit for tokens of 4-5 chars,
+     * 2 for longer ones. An edit is an insertion, deletion, substitution or swap of adjacent letters.
+     */
+    private static Query fuzzyTokenQuery(String token) {
+        int maxEdits = token.length() >= LONG_TOKEN_LENGTH ? MAX_EDITS_LONG_TOKEN : MAX_EDITS_SHORT_TOKEN;
+        BooleanQuery.Builder tokenQuery = new BooleanQuery.Builder();
+        for (Map.Entry<String, Float> fieldBoost : FIELD_BOOSTS.entrySet()) {
+            Term term = new Term(fieldBoost.getKey(), token);
+            tokenQuery.add(new BoostQuery(new FuzzyQuery(term, maxEdits, FUZZY_PREFIX_LENGTH),
+                    fieldBoost.getValue() * FUZZY_BOOST_FACTOR), BooleanClause.Occur.SHOULD);
+        }
+        return tokenQuery.build();
     }
 
     /** Runs the raw text through the same analyzer used at index time. */

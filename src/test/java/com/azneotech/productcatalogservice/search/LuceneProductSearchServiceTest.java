@@ -73,6 +73,53 @@ public class LuceneProductSearchServiceTest {
     }
 
     @Test
+    public void testSearch_WithSwappedLetters_CorrectsTypo() {
+        assertEquals(List.of(1L), searchService.search("bakcpack", 10));
+    }
+
+    @Test
+    public void testSearch_WithMissingLetter_CorrectsTypoAndKeepsTitleMatchFirst() {
+        List<Long> ids = searchService.search("jaket", 10);
+
+        assertEquals(List.of(2L, 3L), ids);
+    }
+
+    @Test
+    public void testSearch_WithExtraLetter_CorrectsTypo() {
+        assertEquals(List.of(3L), searchService.search("coverr", 10));
+    }
+
+    @Test
+    public void testSearch_WithTypoInOneOfSeveralWords_StillRanksTheBestMatchFirst() {
+        List<Long> ids = searchService.search("mens jaket", 10);
+
+        assertEquals(2L, ids.get(0));
+    }
+
+    @Test
+    public void testSearch_WithCorrectlySpelledWord_DoesNotPullInSimilarWords() {
+        searchService.index(product(4L, "Casual Shirt", "Soft cotton.", MENS_CLOTHING));
+        searchService.index(product(5L, "Running Shorts", "Light and quick-drying.", MENS_CLOTHING));
+
+        assertEquals(List.of(4L), searchService.search("shirt", 10));
+    }
+
+    @Test
+    public void testSearch_WithWrongFirstLetter_DoesNotGuess() {
+        assertTrue(searchService.search("kackpack", 10).isEmpty());
+    }
+
+    @Test
+    public void testSearch_WithShortUnknownToken_DoesNotGuess() {
+        assertTrue(searchService.search("jak", 10).isEmpty());
+    }
+
+    @Test
+    public void testSearch_WithUnrelatedGibberish_ReturnsEmpty() {
+        assertTrue(searchService.search("zzzzzzzz", 10).isEmpty());
+    }
+
+    @Test
     public void testSearch_WithCategoryName_MatchesProductsOfThatCategory() {
         List<Long> ids = searchService.search("clothing", 10);
 
