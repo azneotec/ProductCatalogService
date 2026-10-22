@@ -221,7 +221,7 @@ client ── Authorization: Bearer <jwt> ──► ProductController / Category
                                          Eureka resolves "user-auth-service" to a registered instance (8001 / 9001 …)
 ```
 
-- **Service discovery** — `AuthServiceClient` addresses `user-auth-service` by its Eureka name. The `@LoadBalanced` `RestTemplate` (`config/RestTemplateConfig`) swaps the name for a registered instance and spreads calls across instances, so no host or port is configured here.
+- **Service discovery** — `AuthServiceClient` addresses `user-auth-service` by its Eureka name. The `@LoadBalanced` `RestTemplate` (`config/RestTemplateConfig`) swaps the name for a registered instance and spreads calls across instances, so no host or port is configured here. `AuthServiceClient` is the only caller of `user-auth-service`; `StorageProductService` depends only on the repositories and the search index.
 - **The check** — `IAuthorizationService.requireAdmin` runs at the top of each guarded controller method, before the request body is mapped or any service is touched. It needs a `Bearer` header, a response with `valid: true`, and `ROLE_ADMIN` in `roles`. `GET` endpoints are not guarded.
 - **Every guarded call is a network call** — the token is validated against `user-auth-service` on each request (no caching), so a revoked session or logout takes effect immediately.
 - **Failures** — `AuthException` carries an `AuthExceptionType`, and `ControllerAdvisor` maps it: `UNAUTHENTICATED` → `401`, `FORBIDDEN` → `403`, `AUTH_SERVICE_UNAVAILABLE` → `503` (connection error, empty reply, or no `user-auth-service` instance registered). Like the other exception types, the handler is an exhaustive `switch`.

@@ -1,6 +1,5 @@
 package com.azneotech.productcatalogservice.services;
 
-import com.azneotech.productcatalogservice.dtos.UserDto;
 import com.azneotech.productcatalogservice.exceptions.CategoryException;
 import com.azneotech.productcatalogservice.exceptions.CategoryExceptionType;
 import com.azneotech.productcatalogservice.exceptions.ProductException;
@@ -13,9 +12,7 @@ import com.azneotech.productcatalogservice.search.IProductSearchService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.Map;
@@ -32,16 +29,13 @@ public class StorageProductService implements IProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final IProductSearchService searchService;
-    private final RestTemplate restTemplate;
 
     public StorageProductService(ProductRepository productRepository,
                                  CategoryRepository categoryRepository,
-                                 IProductSearchService searchService,
-                                 RestTemplate restTemplate) {
+                                 IProductSearchService searchService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.searchService = searchService;
-        this.restTemplate = restTemplate;
     }
 
     @Override
@@ -133,23 +127,5 @@ public class StorageProductService implements IProductService {
         }
         productRepository.deleteById(id);
         searchService.remove(id);
-    }
-
-    @Override
-    public Product getProductBasedOnUserRole(Long productId, Long userId) {
-        Optional<Product> productOptional = productRepository.findById(productId);
-        if (productOptional.isEmpty()) return null;
-
-        // we are calling user-auth-service using SD
-        ResponseEntity<UserDto> userDtoResponseEntity =
-                restTemplate.getForEntity("http://user-auth-service/users/{userId}", UserDto.class, userId);
-
-        // this conditions tests that response is not null
-        if (userDtoResponseEntity.hasBody()) {
-            System.out.println(userDtoResponseEntity.getBody().getEmail());
-            return productOptional.get();
-        }
-
-        return null;
     }
 }

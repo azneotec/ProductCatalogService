@@ -127,14 +127,6 @@ public class ProductController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @GetMapping("/products/{productId}/users/{userId}")
-    public ResponseEntity<ProductDto> getProductDetailsBasedOnUserRole(
-            @PathVariable Long productId, @PathVariable Long userId) {
-        Product product = productService.getProductBasedOnUserRole(productId, userId);
-        ProductDto responseDto = ProductMappers.mapToProductDto(product);
-        return ResponseEntity.ok(responseDto);
-    }
-
     private Product mapToProduct(ProductDto productDto) {
         Product product = new Product();
         product.setTitle(productDto.getTitle());
