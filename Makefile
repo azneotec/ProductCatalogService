@@ -8,7 +8,7 @@ SKIP_TESTS ?= true
 # Export .env for one recipe line. Sourced by the shell (not `include`) so quoted values work.
 WITH_ENV = set -a; . ./.env; set +a;
 
-.PHONY: jar run test clean check-env
+.PHONY: jar run test clean check-env infra-up infra-down infra-reset
 
 check-env:
 	@test -f .env || { echo "Missing .env - copy .env.example to .env and fill it in"; exit 1; }
@@ -29,3 +29,15 @@ test:
 
 clean:
 	@./mvnw clean
+
+## Start MySQL from docker-compose.yml (host port 3308) and wait until healthy
+infra-up:
+	docker compose up -d --wait
+
+## Stop MySQL, keeping its data
+infra-down:
+	docker compose down
+
+## Stop MySQL and delete its data volume
+infra-reset:
+	docker compose down -v

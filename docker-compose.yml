@@ -1,0 +1,31 @@
+# MySQL for running ProductCatalogService on its own.
+# Start with `make infra-up` (or `docker compose up -d --wait`), stop with `make infra-down`.
+# The service itself runs on the host: `make run` or `./mvnw spring-boot:run`, with
+# DB_URL=jdbc:mysql://localhost:3308/product_catalog_service (see .env.example).
+# Eureka is optional: without it the service starts and logs registration warnings, and the
+# admin-only writes answer 503 because user-auth-service can't be found.
+#
+# Separate project name and host port (3308) from the monorepo's root docker-compose.yml and
+# UserAuthService/docker-compose.yml (3307), so it can run beside them.
+name: product-catalog-service
+
+services:
+  # Override the host port with MYSQL_PORT and use the same value in DB_URL.
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: product_catalog_service # Flyway creates the tables on first start
+    ports:
+      - "${MYSQL_PORT:-3308}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -ppassword --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+volumes:
+  mysql-data:
