@@ -1,0 +1,31 @@
+meta {
+  name: Create Product - Unknown Category
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/products
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "title": "nope",
+    "price": 1,
+    "category": { "id": 999999 }
+  }
+}
+
+assert {
+  res.status: eq 400
+}
+
+docs {
+  `category.id` must reference an existing category.
+}

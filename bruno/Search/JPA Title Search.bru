@@ -1,0 +1,40 @@
+meta {
+  name: JPA Title Search
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/search
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "query": "shirt",
+    "pageSize": 5,
+    "pageNumber": 0,
+    "sortParams": [
+      { "sortCriteria": "price", "sortType": "ASC" }
+    ]
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("title matches, ascending price", function () {
+    expect(res.body.content).to.not.be.empty;
+    res.body.content.forEach(p => expect(p.title.toLowerCase()).to.contain("shirt"));
+    const prices = res.body.content.map(p => p.price);
+    expect(prices).to.deep.equal([...prices].sort((a, b) => a - b));
+  });
+}
+
+docs {
+  The older JPA-based search: title only, no fuzziness. `sortParams` is optional; there is no key whitelist.
+  Returns a Spring `Page` (`content`, `totalElements`, ...).
+}

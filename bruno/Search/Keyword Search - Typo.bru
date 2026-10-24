@@ -1,0 +1,30 @@
+meta {
+  name: Keyword Search - Typo
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/products/search?q=jaket
+  body: none
+  auth: none
+}
+
+params:query {
+  q: jaket
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("a misspelled word still finds jackets", function () {
+    expect(res.body.totalElements).to.be.greaterThan(0);
+    expect(res.body.content.some(p => /jacket/i.test(p.title))).to.equal(true);
+  });
+}
+
+docs {
+  A word with no exact or prefix hit is matched fuzzily (1 edit for 4-5 letters, 2 for longer).
+}

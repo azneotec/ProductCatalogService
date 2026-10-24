@@ -194,6 +194,12 @@ On `POST`/`PUT` only `category.id` is read; the category must already exist. `id
 | `GET` | `/categories` | all categories as `[{ "id": 1, "name": "electronics" }, …]` |
 | `POST` | `/categories` | create a category from `{ "name": "…" }` (`201`). Needs `Authorization: Bearer <jwt>` from `user-auth-service` with `ROLE_ADMIN`: `401` for a missing/invalid token, `403` without the role, `503` if `user-auth-service` isn't reachable via Eureka |
 
+### Bruno collection
+
+`bruno/` is a [Bruno](https://www.usebruno.com) collection covering every endpoint (open the folder in Bruno, pick the `Local` environment for port 8002 or `Local-9002` for the second instance). Run **Auth > Login as Admin** first: it logs in against `user-auth-service` (`authUrl`, 8001) as the seeded admin and stores `adminToken`, which the write requests use. The `Errors` folder covers the 400/401/403/404 cases; its two "Not an Admin" requests need **Auth > Signup Regular User** and **Login as Regular User** first. Create, Update and Delete Product run in order and leave the catalog as they found it. The services must be running with Eureka for the guarded requests to get past `503` (`make up` in the repo root).
+
+From a terminal: `cd bruno && npx @usebruno/cli run --env Local -r` (31 requests, all passing against a local stack).
+
 ### Examples
 
 ```bash

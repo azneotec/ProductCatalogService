@@ -1,0 +1,29 @@
+meta {
+  name: List by Category Id
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/products?categoryId={{categoryId}}
+  body: none
+  auth: none
+}
+
+params:query {
+  categoryId: {{categoryId}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("only that category", function () {
+    res.body.forEach(p => expect(p.category.id).to.equal(Number(bru.getEnvVar("categoryId"))));
+  });
+}
+
+docs {
+  Exactly one of `categoryId` / `category` is allowed.
+}

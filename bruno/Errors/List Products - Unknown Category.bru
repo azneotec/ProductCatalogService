@@ -1,0 +1,19 @@
+meta {
+  name: List Products - Unknown Category
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/products?category=nope
+  body: none
+  auth: none
+}
+
+params:query {
+  category: nope
+}
+
+assert {
+  res.status: eq 404
+}

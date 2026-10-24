@@ -1,0 +1,15 @@
+meta {
+  name: Get Product - Non-positive Id
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/products/0
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 400
+}

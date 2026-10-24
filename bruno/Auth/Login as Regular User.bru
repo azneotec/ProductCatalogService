@@ -1,0 +1,38 @@
+meta {
+  name: Login as Regular User
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{authUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{userEmail}}",
+    "password": "{{userPassword}}"
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setVar("userToken", res.body.token);
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("is not an admin", function () {
+    expect(res.body.user.roles).to.not.include("ROLE_ADMIN");
+  });
+}
+
+docs {
+  Stores the non-admin JWT as `userToken`. Run Signup Regular User first.
+}

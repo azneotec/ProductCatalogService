@@ -1,0 +1,23 @@
+meta {
+  name: Create Product - No Token
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/products
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "title": "nope",
+    "price": 1,
+    "category": { "id": 1 }
+  }
+}
+
+assert {
+  res.status: eq 401
+}

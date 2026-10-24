@@ -1,0 +1,29 @@
+meta {
+  name: Create Category - Not an Admin
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/categories
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{userToken}}
+}
+
+body:json {
+  {
+    "name": "should-not-be-created"
+  }
+}
+
+assert {
+  res.status: eq 403
+}
+
+docs {
+  Valid token without ROLE_ADMIN. Run Auth > Signup Regular User and Login as Regular User first.
+}

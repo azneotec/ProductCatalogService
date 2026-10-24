@@ -1,0 +1,40 @@
+meta {
+  name: Login as Admin
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{authUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{adminEmail}}",
+    "password": "{{adminPassword}}"
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setVar("adminToken", res.body.token);
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("holds ROLE_ADMIN", function () {
+    expect(res.body.user.roles).to.include("ROLE_ADMIN");
+  });
+}
+
+docs {
+  Logs in against user-auth-service (`authUrl`, not this service) as the admin seeded by its migration V6
+  and stores the JWT as `adminToken`. Run this first: every write request in this collection uses it.
+  Local development only: the seeded password is committed to the repo.
+}

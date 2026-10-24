@@ -1,0 +1,25 @@
+meta {
+  name: Get Product by Id
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/products/{{productId}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("is the requested product", function () {
+    expect(res.body.id).to.equal(Number(bru.getEnvVar("productId")));
+  });
+}
+
+docs {
+  Public. Uses the `productId` environment variable (a seeded product by default).
+}

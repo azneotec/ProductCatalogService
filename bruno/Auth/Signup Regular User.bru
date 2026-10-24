@@ -1,0 +1,37 @@
+meta {
+  name: Signup Regular User
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{authUrl}}/auth/signup
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Bruno Catalog User",
+    "email": "{{userEmail}}",
+    "phoneNumber": "{{userPhone}}",
+    "password": "{{userPassword}}"
+  }
+}
+
+script:pre-request {
+  if (!bru.getVar("userEmail")) {
+    const stamp = Date.now();
+    bru.setVar("userEmail", `bruno.catalog.${stamp}@example.com`);
+    bru.setVar("userPhone", `9${String(stamp).slice(-9)}`);
+  }
+}
+
+assert {
+  res.status: eq 201
+}
+
+docs {
+  Creates a plain ROLE_USER account on user-auth-service with a generated email and phone number (both must be unique), kept as `userEmail` / `userPhone`.
+  Only needed for the "Not an Admin" error requests.
+}

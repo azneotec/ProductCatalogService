@@ -1,0 +1,30 @@
+meta {
+  name: List by Category Name
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/products?category={{categoryName}}
+  body: none
+  auth: none
+}
+
+params:query {
+  category: {{categoryName}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("only that category", function () {
+    expect(res.body).to.not.be.empty;
+    res.body.forEach(p => expect(p.category.name.toLowerCase()).to.equal(bru.getEnvVar("categoryName").toLowerCase()));
+  });
+}
+
+docs {
+  Case-insensitive name match.
+}

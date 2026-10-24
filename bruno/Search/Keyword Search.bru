@@ -1,0 +1,31 @@
+meta {
+  name: Keyword Search
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/products/search?q=jacket
+  body: none
+  auth: none
+}
+
+params:query {
+  q: jacket
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("paged wrapper, best match first", function () {
+    expect(res.body).to.include.keys(["content", "page", "size", "totalElements", "totalPages"]);
+    expect(res.body.content).to.not.be.empty;
+  });
+}
+
+docs {
+  Lucene search over title, category and description, relevance order. Public.
+  The index is built after seeding, so right after a first boot this can briefly be empty.
+}

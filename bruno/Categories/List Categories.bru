@@ -1,0 +1,26 @@
+meta {
+  name: List Categories
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/categories
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("returns a bare array of {id, name}", function () {
+    expect(res.body).to.be.an("array").and.not.empty;
+    expect(res.body[0]).to.have.keys(["id", "name"]);
+  });
+}
+
+docs {
+  Public. The FakeStore seed creates four categories (electronics, jewelery, men's clothing, women's clothing).
+}

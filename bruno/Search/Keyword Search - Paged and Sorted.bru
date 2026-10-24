@@ -1,0 +1,35 @@
+meta {
+  name: Keyword Search - Paged and Sorted
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/products/search?q=shirt&page=0&size=3&sort=price,desc
+  body: none
+  auth: none
+}
+
+params:query {
+  q: shirt
+  page: 0
+  size: 3
+  sort: price,desc
+}
+
+assert {
+  res.status: eq 200
+  res.body.size: eq 3
+}
+
+tests {
+  test("prices are descending", function () {
+    const prices = res.body.content.map(p => p.price);
+    expect(prices).to.deep.equal([...prices].sort((a, b) => b - a));
+  });
+}
+
+docs {
+  `page` is 0-based, `size` is capped at 100, `sort=field,dir` may be repeated. Sorted requests are
+  sorted and paged by MySQL instead of relevance.
+}

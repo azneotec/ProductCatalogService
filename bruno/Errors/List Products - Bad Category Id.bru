@@ -1,0 +1,19 @@
+meta {
+  name: List Products - Bad Category Id
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{baseUrl}}/products?categoryId=abc
+  body: none
+  auth: none
+}
+
+params:query {
+  categoryId: abc
+}
+
+assert {
+  res.status: eq 400
+}

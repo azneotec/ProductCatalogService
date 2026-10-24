@@ -1,0 +1,24 @@
+meta {
+  name: Keyword Search - Unknown Sort Field
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{baseUrl}}/products/search?q=shirt&sort=nope,asc
+  body: none
+  auth: none
+}
+
+params:query {
+  q: shirt
+  sort: nope,asc
+}
+
+assert {
+  res.status: eq 404
+}
+
+docs {
+  Existing behaviour: the catch-all handler turns the unknown property into a 404.
+}

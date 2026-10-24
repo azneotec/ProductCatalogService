@@ -1,0 +1,47 @@
+meta {
+  name: Create Category
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/categories
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "name": "{{newCategoryName}}"
+  }
+}
+
+script:pre-request {
+  bru.setVar("newCategoryName", `bruno-${Date.now()}`);
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar("newCategoryId", res.body.id);
+  }
+}
+
+assert {
+  res.status: eq 201
+}
+
+tests {
+  test("echoes the new category", function () {
+    expect(res.body.id).to.be.a("number");
+    expect(res.body.name).to.equal(bru.getVar("newCategoryName"));
+  });
+}
+
+docs {
+  Admin only. The service validates `adminToken` against user-auth-service (found through Eureka).
+  Run Auth > Login as Admin first. Stores the new id as `newCategoryId`.
+}

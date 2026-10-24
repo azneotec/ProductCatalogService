@@ -1,0 +1,41 @@
+meta {
+  name: Update Product
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{baseUrl}}/products/{{createdProductId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "title": "{{productTitle}}",
+    "price": 79.9,
+    "description": "Updated from the Bruno collection.",
+    "category": { "id": {{categoryId}} },
+    "image": "https://example.com/bruno.png",
+    "rating": { "rate": 4.2, "count": 7 }
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("reflects the replacement", function () {
+    expect(res.body.price).to.equal(79.9);
+    expect(res.body.description).to.contain("Updated");
+  });
+}
+
+docs {
+  Admin only. Replaces the product created by Create Product.
+}

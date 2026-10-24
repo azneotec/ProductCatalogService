@@ -1,0 +1,24 @@
+meta {
+  name: List Products - Both Filters
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/products?categoryId=1&category=jewelery
+  body: none
+  auth: none
+}
+
+params:query {
+  categoryId: 1
+  category: jewelery
+}
+
+assert {
+  res.status: eq 400
+}
+
+docs {
+  Exactly one of `categoryId` / `category`.
+}

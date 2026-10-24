@@ -1,0 +1,33 @@
+meta {
+  name: Create Category - Garbage Token
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/categories
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{garbageToken}}
+}
+
+body:json {
+  {
+    "name": "should-not-be-created"
+  }
+}
+
+script:pre-request {
+  bru.setVar("garbageToken", "not.a.jwt");
+}
+
+assert {
+  res.status: eq 401
+}
+
+docs {
+  user-auth-service reports `valid: false`.
+}

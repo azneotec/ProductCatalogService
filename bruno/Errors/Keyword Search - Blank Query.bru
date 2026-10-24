@@ -1,0 +1,19 @@
+meta {
+  name: Keyword Search - Blank Query
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{baseUrl}}/products/search?q=%20
+  body: none
+  auth: none
+}
+
+params:query {
+  q: %20
+}
+
+assert {
+  res.status: eq 400
+}

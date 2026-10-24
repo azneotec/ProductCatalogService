@@ -1,0 +1,53 @@
+meta {
+  name: Create Product
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/products
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "title": "{{productTitle}}",
+    "price": 89.5,
+    "description": "Created from the Bruno collection.",
+    "category": { "id": {{categoryId}} },
+    "image": "https://example.com/bruno.png",
+    "rating": { "rate": 4.2, "count": 7 }
+  }
+}
+
+script:pre-request {
+  bru.setVar("productTitle", `Bruno Product ${Date.now()}`);
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar("createdProductId", res.body.id);
+  }
+}
+
+assert {
+  res.status: eq 201
+}
+
+tests {
+  test("returns the stored product", function () {
+    expect(res.body.id).to.be.a("number");
+    expect(res.body.title).to.equal(bru.getVar("productTitle"));
+    expect(res.body.category.id).to.equal(Number(bru.getEnvVar("categoryId")));
+  });
+}
+
+docs {
+  Admin only. Only `category.id` is read from the body and the category must exist. Stores the new id as
+  `createdProductId`, which Update and Delete use, so these three run in order and leave the catalog unchanged.
+}

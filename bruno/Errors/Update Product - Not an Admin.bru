@@ -1,0 +1,27 @@
+meta {
+  name: Update Product - Not an Admin
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{baseUrl}}/products/1
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{userToken}}
+}
+
+body:json {
+  {
+    "title": "nope",
+    "price": 1,
+    "category": { "id": 1 }
+  }
+}
+
+assert {
+  res.status: eq 403
+}

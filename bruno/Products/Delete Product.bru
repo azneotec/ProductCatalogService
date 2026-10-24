@@ -1,0 +1,23 @@
+meta {
+  name: Delete Product
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{baseUrl}}/products/{{createdProductId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  Admin only. Removes the product created by Create Product (and drops it from the search index).
+}
